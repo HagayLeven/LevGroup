@@ -1833,8 +1833,9 @@ function calcQuote(data, tariffs) {
     managementProfit +
     customExtrasTotal;
 
-  // הנחה (סכום קבוע)
-  const discountAmount = Number(data.discount) || 0;
+  // הנחה (באחוזים מתוך סה"כ לפני מע"מ)
+  const discountPct = Math.max(0, Math.min(100, Number(data.discount) || 0));
+  const discountAmount = subtotalBeforeDiscount * (discountPct / 100);
   const subtotalAfterDiscount = Math.max(0, subtotalBeforeDiscount - discountAmount);
 
   // מע"מ — מע"מ על הניקיון כבר כלול בתוך cleaningTotal (לפי נוסחת האקסל),
@@ -1865,6 +1866,7 @@ function calcQuote(data, tariffs) {
     managementProfit: +managementProfit.toFixed(2),
     customExtrasTotal: +customExtrasTotal.toFixed(2),
     subtotalBeforeDiscount: +subtotalBeforeDiscount.toFixed(2),
+    discountPct: +discountPct.toFixed(1),
     discountAmount: +discountAmount.toFixed(2),
     subtotalAfterDiscount: +subtotalAfterDiscount.toFixed(2),
     vatPct,
@@ -2262,8 +2264,8 @@ function renderAdmin() {
         </div>
         <div class="form-grid">
           <div class="form-field">
-            <label>הנחה (₪ / חודש)</label>
-            <input id="f-discount" type="number" min="0" placeholder="0">
+            <label for="f-discount">הנחה (% מסה"כ לפני מע"מ)</label>
+            <input id="f-discount" type="number" min="0" max="100" step="0.5" placeholder="0">
           </div>
           <div class="form-field">
             <label>מע"מ (%)</label>
@@ -2524,7 +2526,7 @@ function updateSummary() {
 
     ${calc.discountAmount > 0 ? `
       <div class="summary-section">
-        <div class="sum-row"><span>🎁 הנחה</span><span style="color:var(--red);">-${fmt(calc.discountAmount)}</span></div>
+        <div class="sum-row"><span>🎁 הנחה (${calc.discountPct}%)</span><span style="color:var(--red);">-${fmt(calc.discountAmount)}</span></div>
         <div class="sum-row sub-total"><span>אחרי הנחה</span><span>${fmt(calc.subtotalAfterDiscount)}</span></div>
       </div>
     ` : ''}
@@ -2781,10 +2783,10 @@ async function renderClient() {
               <div class="bd-label"><div class="bd-name">סה"כ ביניים</div></div>
               <div class="bd-price">${fmt(calc.subtotalBeforeDiscount ?? (calc.totalMonthly - calc.vatAmount + (Number(q.discount)||0)))} ₪</div>
             </div>
-            ${Number(q.discount) > 0 ? `
+            ${calc.discountAmount > 0 ? `
               <div class="doc-bd-row discount">
-                <div class="bd-label"><div class="bd-name">הנחה</div></div>
-                <div class="bd-price">− ${fmt(Number(q.discount))} ₪</div>
+                <div class="bd-label"><div class="bd-name">הנחה ${calc.discountPct}%</div></div>
+                <div class="bd-price">− ${fmt(calc.discountAmount)} ₪</div>
               </div>
             ` : ''}
             <div class="doc-bd-row vat">

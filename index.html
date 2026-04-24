@@ -111,6 +111,12 @@ h3 { font-size: 1.1rem; }
   font-weight: 700;
   letter-spacing: -0.05em;
 }
+.brand-logo {
+  height: 64px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
 .brand-name {
   font-weight: 700;
   font-size: 1.05rem;
@@ -1369,11 +1375,7 @@ function topbar(active) {
   return `
     <div class="topbar">
       <div class="brand">
-        <div class="brand-mark">L</div>
-        <div>
-          <div class="brand-name">${CONFIG.business.name}</div>
-          <div class="brand-sub">${CONFIG.business.subtitle}</div>
-        </div>
+        <img src="assets/logo.png" alt="${CONFIG.business.name}" class="brand-logo">
       </div>
       <div class="nav-tabs">
         <button class="nav-tab ${active==='admin'?'active':''}" onclick="location.search=''">הצעה חדשה</button>

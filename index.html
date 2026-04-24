@@ -2251,7 +2251,12 @@ function renderSettings() {
 const App = {
   // Admin: locations
   addLocation() {
-    State.draft.cleaningLocations.push({ name: '', minutes: 30, timesPerWeek: 1 });
+    State.draft.cleaningLocations.push({ name: '', minutes: 0, timesPerWeek: 1 });
+    renderLocations();
+    updateSummary();
+  },
+  addLocationPreset(name, timesPerWeek) {
+    State.draft.cleaningLocations.push({ name, minutes: 0, timesPerWeek });
     renderLocations();
     updateSummary();
   },

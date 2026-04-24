@@ -1510,6 +1510,11 @@ const DEFAULT_TARIFFS = {
     pricePerVisit: 250
   },
 
+  // ניקיון חדר אשפה - מחיר לפעם
+  trashRoom: {
+    pricePerVisit: 50
+  },
+
   // מערכות מורכבות
   complexSystems: {
     price: 500  // ₪/חודש אם קיים
@@ -1636,6 +1641,9 @@ function calcQuote(data, tariffs) {
   // 3b. חצרנות
   const caretakingTotal = (Number(data.caretakingVisitsPerMonth) || 0) * (t.caretaking?.pricePerVisit || 250);
 
+  // 3c. ניקיון חדר אשפה
+  const trashRoomTotal = (Number(data.trashRoomVisitsPerMonth) || 0) * (t.trashRoom?.pricePerVisit || 50);
+
   // 4. מערכות מורכבות
   const complexSystemsTotal = data.hasComplexSystems ? t.complexSystems.price : 0;
 
@@ -1652,6 +1660,7 @@ function calcQuote(data, tariffs) {
     elevatorsTotal +
     gardeningTotal +
     caretakingTotal +
+    trashRoomTotal +
     complexSystemsTotal +
     managementProfit +
     customExtrasTotal;
@@ -1677,6 +1686,7 @@ function calcQuote(data, tariffs) {
     elevatorsTotal: +elevatorsTotal.toFixed(2),
     gardeningTotal: +gardeningTotal.toFixed(2),
     caretakingTotal: +caretakingTotal.toFixed(2),
+    trashRoomTotal: +trashRoomTotal.toFixed(2),
     complexSystemsTotal: +complexSystemsTotal.toFixed(2),
     managementProfit: +managementProfit.toFixed(2),
     customExtrasTotal: +customExtrasTotal.toFixed(2),
@@ -1847,6 +1857,7 @@ function renderAdmin() {
       elevators: [],
       gardeningVisitsPerMonth: 0,
       caretakingVisitsPerMonth: 0,
+      trashRoomVisitsPerMonth: 0,
       hasComplexSystems: false,
       customExtras: [],
       discount: 0,
@@ -1987,6 +1998,10 @@ function renderAdmin() {
             <label>חצרנות - פעמים בחודש</label>
             <input id="f-caretaking" type="number" min="0">
           </div>
+          <div class="form-field">
+            <label>ניקיון חדר אשפה - פעמים בחודש</label>
+            <input id="f-trashroom" type="number" min="0">
+          </div>
           <div class="form-field" style="justify-content:flex-end;">
             <div class="checkbox-row" id="complex-systems-row" onclick="App.toggleComplexSystems()">
               <input type="checkbox" id="f-complex">
@@ -2096,6 +2111,7 @@ function syncFormFromDraft() {
   $('#f-parking').value = d.building.parkingType || 'לא מקורה';
   $('#f-gardening').value = d.gardeningVisitsPerMonth || 0;
   $('#f-caretaking').value = d.caretakingVisitsPerMonth || 0;
+  if ($('#f-trashroom')) $('#f-trashroom').value = d.trashRoomVisitsPerMonth || 0;
   $('#f-complex').checked = !!d.hasComplexSystems;
   $('#complex-systems-row').classList.toggle('checked', !!d.hasComplexSystems);
   $('#f-discount').value = d.discount || '';
@@ -2121,6 +2137,7 @@ function adminInputHandler(e) {
   else if (id === 'f-parking') d.building.parkingType = t.value;
   else if (id === 'f-gardening') d.gardeningVisitsPerMonth = Number(t.value) || 0;
   else if (id === 'f-caretaking') d.caretakingVisitsPerMonth = Number(t.value) || 0;
+  else if (id === 'f-trashroom') d.trashRoomVisitsPerMonth = Number(t.value) || 0;
   else if (id === 'f-complex') d.hasComplexSystems = t.checked;
   else if (id === 'f-discount') d.discount = Number(t.value) || 0;
   else if (id === 'f-vat') d.vatPct = Number(t.value) || 0;
@@ -2209,6 +2226,7 @@ function updateSummary() {
       ${calc.elevatorsTotal > 0 ? `<div class="sum-row"><span>🛗 מעליות</span><span>${fmt(calc.elevatorsTotal)}</span></div>` : ''}
       ${calc.gardeningTotal > 0 ? `<div class="sum-row"><span>🌿 גינון (${State.draft.gardeningVisitsPerMonth}×/חודש)</span><span>${fmt(calc.gardeningTotal)}</span></div>` : ''}
       ${calc.caretakingTotal > 0 ? `<div class="sum-row"><span>🧺 חצרנות (${State.draft.caretakingVisitsPerMonth}×/חודש)</span><span>${fmt(calc.caretakingTotal)}</span></div>` : ''}
+      ${calc.trashRoomTotal > 0 ? `<div class="sum-row"><span>🗑️ ניקיון חדר אשפה (${State.draft.trashRoomVisitsPerMonth}×/חודש)</span><span>${fmt(calc.trashRoomTotal)}</span></div>` : ''}
       ${calc.complexSystemsTotal > 0 ? `<div class="sum-row"><span>⚙️ מערכות מורכבות</span><span>${fmt(calc.complexSystemsTotal)}</span></div>` : ''}
       <div class="sum-row"><span>🏢 רווח חברת ניהול (${fmt(t.management.baseProfit)}×${State.draft.building.apartments || 0} דירות)</span><span>${fmt(calc.managementProfit)}</span></div>
       ${calc.customExtrasTotal > 0 ? `<div class="sum-row"><span>➕ תוספות מותאמות</span><span>${fmt(calc.customExtrasTotal)}</span></div>` : ''}
@@ -2674,6 +2692,16 @@ function renderSettings() {
         </div>
 
         <div class="settings-group">
+          <h3>🗑️ ניקיון חדר אשפה</h3>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>מחיר לפעם (₪)</label>
+              <input type="number" id="t-trashroom" value="${t.trashRoom?.pricePerVisit ?? 50}">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-group">
           <h3>⚙️ מערכות מורכבות</h3>
           <div class="form-grid">
             <div class="form-field">
@@ -3007,6 +3035,8 @@ const App = {
     State.tariffs.gardening.pricePerVisit = Number($('#t-gardening').value) || 400;
     if (!State.tariffs.caretaking) State.tariffs.caretaking = { pricePerVisit: 250 };
     State.tariffs.caretaking.pricePerVisit = Number($('#t-caretaking').value) || 250;
+    if (!State.tariffs.trashRoom) State.tariffs.trashRoom = { pricePerVisit: 50 };
+    State.tariffs.trashRoom.pricePerVisit = Number($('#t-trashroom').value) || 50;
     State.tariffs.complexSystems.price = Number($('#t-complex').value) || 500;
     State.tariffs.vatPct = Number($('#t-vat').value) || 18;
 

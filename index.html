@@ -54,9 +54,348 @@ window.dispatchEvent(new Event('firebase-ready'));
   --red-soft: #FCE8DF;
   --blue: #2B5F9E;
   --blue-soft: #E6EEF9;
+  --navy: #1E3A5F;
+  --navy-soft: #E8EEF6;
   --shadow-sm: 0 1px 2px rgba(26,26,26,0.05);
   --shadow-md: 0 4px 12px rgba(26,26,26,0.06);
   --shadow-lg: 0 12px 32px rgba(26,26,26,0.08);
+  --shadow-xl: 0 24px 60px rgba(26,26,26,0.16);
+}
+
+/* ============== Landing / Hero ============== */
+.landing {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.landing-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0 20px;
+}
+.landing-nav .brand-logo { height: 56px; }
+.landing-nav-links { display: flex; gap: 8px; }
+.landing-nav-links button {
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.landing-nav-links button:hover {
+  background: var(--white);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.hero {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+  min-height: 560px;
+  background: var(--ink);
+  display: flex;
+  align-items: stretch;
+}
+.hero-image {
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/hero-new-client.jpg');
+  background-size: cover;
+  background-position: center;
+  filter: saturate(1.05);
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    rgba(26,26,26,0.78) 0%,
+    rgba(30,58,95,0.55) 55%,
+    rgba(197,165,114,0.25) 100%);
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  padding: 60px 60px;
+  gap: 40px;
+  align-items: center;
+}
+.hero-text { color: var(--white); }
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--white);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin-bottom: 22px;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 7px; height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
+}
+.hero-headline {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: 3.6rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 18px;
+  color: var(--white);
+}
+.hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+}
+.hero-sub {
+  font-size: 1.1rem;
+  line-height: 1.55;
+  opacity: 0.9;
+  margin-bottom: 32px;
+  max-width: 480px;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 36px;
+  background: var(--accent);
+  color: var(--ink);
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(197,165,114,0.45);
+  transition: all 0.25s cubic-bezier(.2,.8,.2,1);
+  letter-spacing: 0.01em;
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  background: #D4B583;
+  box-shadow: 0 18px 42px rgba(197,165,114,0.55);
+}
+.hero-cta .arrow {
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+}
+.hero-cta:hover .arrow { transform: translateX(-4px); }
+
+.hero-trust {
+  margin-top: 28px;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.hero-trust .pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+  font-size: 0.88rem;
+  opacity: 0.9;
+}
+.hero-trust .pill .dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.hero-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 20px;
+  padding: 28px;
+  color: var(--white);
+}
+.hero-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  letter-spacing: 0.02em;
+}
+.hero-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hero-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.hero-feat-ico {
+  width: 38px; height: 38px;
+  background: var(--accent);
+  color: var(--ink);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.hero-feat-txt strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+.hero-feat-txt span {
+  font-size: 0.82rem;
+  opacity: 0.82;
+  line-height: 1.4;
+}
+
+.landing-values {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+}
+.value-card {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: right;
+  transition: all 0.25s;
+}
+.value-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent);
+}
+.value-ico {
+  width: 46px; height: 46px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+  color: var(--ink);
+  border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: 14px;
+}
+.value-card h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.value-card p {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.landing-footer {
+  margin-top: auto;
+  padding: 24px 0 12px;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+.landing-footer .sep { margin: 0 10px; opacity: 0.5; }
+
+/* ============== Admin hero banner ============== */
+.admin-hero {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-lg);
+  height: 180px;
+  background: var(--navy);
+}
+.admin-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/hero-quote.jpg');
+  background-size: cover;
+  background-position: center;
+}
+.admin-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, rgba(26,26,26,0.55) 0%, rgba(30,58,95,0.35) 60%, rgba(30,58,95,0.1) 100%);
+}
+.admin-hero-inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  color: var(--white);
+}
+.admin-hero-title {
+  font-family: 'Instrument Serif', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+.admin-hero-sub {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+.admin-hero-badge {
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-hero-badge::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (max-width: 900px) {
+  .hero-content { grid-template-columns: 1fr; padding: 40px 28px; }
+  .hero-headline { font-size: 2.5rem; }
+  .hero { min-height: auto; }
+  .landing-values { grid-template-columns: 1fr; }
+  .admin-hero { height: auto; padding: 20px; }
+  .admin-hero-inner { flex-direction: column; align-items: flex-start; gap: 12px; padding: 0; }
+  .admin-hero-title { font-size: 1.5rem; }
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -1362,10 +1701,103 @@ function route() {
   } else if (view === 'settings') {
     State.view = 'settings';
     renderSettings();
-  } else {
+  } else if (view === 'new') {
     State.view = 'admin';
     renderAdmin();
+  } else {
+    State.view = 'landing';
+    renderLanding();
   }
+}
+
+function renderLanding() {
+  document.body.className = '';
+  $('#root').innerHTML = `
+    <div class="landing">
+      <div class="landing-nav">
+        <img src="assets/logo.png" alt="${CONFIG.business.name}" class="brand-logo">
+        <div class="landing-nav-links">
+          <button onclick="location.search='?view=archive'">ארכיון הצעות</button>
+          <button onclick="location.search='?view=settings'">מרכז בקרה</button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="hero-image"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="hero-text">
+            <div class="hero-eyebrow">קבוצת LEV GROUP · אחזקת בניינים</div>
+            <h1 class="hero-headline">השקט שלך,<br><em>ההצלחה שלנו.</em></h1>
+            <p class="hero-sub">
+              מערכת הצעות מחיר דיגיטלית מותאמת אישית לבניין שלך — שקופה, מדויקת, ונבנית מול עיניך תוך דקות.
+            </p>
+            <button class="hero-cta" onclick="location.search='?view=new'">
+              <span>לקוח חדש · בואו נתחיל</span>
+              <span class="arrow">←</span>
+            </button>
+            <div class="hero-trust">
+              <div class="pill"><span class="dot"></span>ניהול · אחזקה · תיווך</div>
+              <div class="pill"><span class="dot"></span>שירות אישי 24/7</div>
+              <div class="pill"><span class="dot"></span>שקיפות מלאה</div>
+            </div>
+          </div>
+          <div class="hero-card">
+            <h3>מה תקבל בהצעה שלנו</h3>
+            <div class="hero-features">
+              <div class="hero-feat">
+                <div class="hero-feat-ico">✦</div>
+                <div class="hero-feat-txt">
+                  <strong>תמחור שקוף</strong>
+                  <span>פירוט מלא של כל סעיף — בלי הפתעות, בלי אותיות קטנות.</span>
+                </div>
+              </div>
+              <div class="hero-feat">
+                <div class="hero-feat-ico">⚡</div>
+                <div class="hero-feat-txt">
+                  <strong>הצעה תוך דקות</strong>
+                  <span>מקבלים קישור אישי, חותמים דיגיטלית ומתחילים.</span>
+                </div>
+              </div>
+              <div class="hero-feat">
+                <div class="hero-feat-ico">♦</div>
+                <div class="hero-feat-txt">
+                  <strong>מותאם לבניין שלך</strong>
+                  <span>חישוב לפי מספר דיירים, קומות, מעליות ושטחים משותפים.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="landing-values">
+        <div class="value-card">
+          <div class="value-ico">🏢</div>
+          <h4>ניהול בניינים מקצועי</h4>
+          <p>צוות מנוסה, נוכחות בשטח ומענה מיידי לכל צורך של הנציגות והדיירים.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-ico">🛠️</div>
+          <h4>אחזקה ללא פשרות</h4>
+          <p>בעלי מקצוע מוסמכים, חומרי ניקוי איכותיים וסטנדרט בלתי מתפשר.</p>
+        </div>
+        <div class="value-card">
+          <div class="value-ico">🤝</div>
+          <h4>שקיפות וליווי אישי</h4>
+          <p>תמחור הוגן, דיווח חודשי ונציג קבוע שזמין לכל שאלה.</p>
+        </div>
+      </div>
+
+      <div class="landing-footer">
+        ${CONFIG.business.name}
+        <span class="sep">·</span>
+        ${CONFIG.business.phone}
+        <span class="sep">·</span>
+        כל הזכויות שמורות
+      </div>
+    </div>
+  `;
 }
 
 // ================================================================
@@ -1374,11 +1806,12 @@ function route() {
 function topbar(active) {
   return `
     <div class="topbar">
-      <div class="brand">
+      <div class="brand" style="cursor:pointer" onclick="location.search=''" title="חזרה לדף הבית">
         <img src="assets/logo.png" alt="${CONFIG.business.name}" class="brand-logo">
       </div>
       <div class="nav-tabs">
-        <button class="nav-tab ${active==='admin'?'active':''}" onclick="location.search=''">הצעה חדשה</button>
+        <button class="nav-tab" onclick="location.search=''">🏠 דף הבית</button>
+        <button class="nav-tab ${active==='admin'?'active':''}" onclick="location.search='?view=new'">הצעה חדשה</button>
         <button class="nav-tab ${active==='archive'?'active':''}" onclick="location.search='?view=archive'">ארכיון</button>
         <button class="nav-tab ${active==='settings'?'active':''}" onclick="location.search='?view=settings'">מרכז בקרה</button>
       </div>
@@ -1419,6 +1852,19 @@ function renderAdmin() {
   $('#root').innerHTML = `
     <div class="app">
       ${topbar('admin')}
+
+      <!-- Admin Hero Banner -->
+      <div class="admin-hero">
+        <div class="admin-hero-bg"></div>
+        <div class="admin-hero-overlay"></div>
+        <div class="admin-hero-inner">
+          <div>
+            <div class="admin-hero-title">בואו נבנה הצעה מותאמת</div>
+            <div class="admin-hero-sub">מלאו את פרטי הבניין והשירותים — הסיכום יתעדכן אוטומטית מצד שמאל.</div>
+          </div>
+          <div class="admin-hero-badge">הצעה חדשה</div>
+        </div>
+      </div>
 
       <!-- Client -->
       <div class="section">

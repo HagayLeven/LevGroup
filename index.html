@@ -2127,23 +2127,10 @@ function renderAdmin() {
         </datalist>
         <div class="add-menu" id="add-location-menu">
           <button class="add-menu-trigger" onclick="App.toggleMenu('add-location-menu')">
-            <span>➕ הוספת מיקום ניקיון</span>
+            <span>הוספה</span>
             <span class="chev">▼</span>
           </button>
-          <div class="add-menu-panel">
-            <button class="add-menu-item" onclick="App.addLocationPreset('לובי קומות',1);App.closeMenus()">
-              <span class="mi-label">לובי קומות</span><span class="mi-hint">1×/שבוע</span>
-            </button>
-            <button class="add-menu-item" onclick="App.addLocationPreset('חדר מדרגות',1);App.closeMenus()">
-              <span class="mi-label">חדר מדרגות</span><span class="mi-hint">1×/שבוע</span>
-            </button>
-            <button class="add-menu-item" onclick="App.addLocationPreset('לובי ראשי',5);App.closeMenus()">
-              <span class="mi-label">לובי ראשי</span><span class="mi-hint">5×/שבוע</span>
-            </button>
-            <button class="add-menu-item custom" onclick="App.addLocation();App.closeMenus()">
-              <span class="mi-label">מיקום מותאם אישית</span><span class="mi-hint">הגדר בעצמך</span>
-            </button>
-          </div>
+          <div class="add-menu-panel" id="location-menu-panel"></div>
         </div>
       </div>
 
@@ -2156,7 +2143,7 @@ function renderAdmin() {
         <div id="elevators-body"></div>
         <div class="add-menu" id="add-elevator-menu">
           <button class="add-menu-trigger" onclick="App.toggleMenu('add-elevator-menu')">
-            <span>➕ הוספת מעלית</span>
+            <span>הוסף מעלית</span>
             <span class="chev">▼</span>
           </button>
           <div class="add-menu-panel" id="elevator-menu-panel"></div>
@@ -2291,17 +2278,43 @@ function renderAdmin() {
   });
 }
 
+function renderLocationMenu() {
+  const panel = $('#location-menu-panel');
+  if (!panel) return;
+  const presets = [
+    { name: 'לובי קומות', times: 1 },
+    { name: 'חדר מדרגות', times: 1 },
+    { name: 'לובי ראשי', times: 5 }
+  ];
+  const used = new Set((State.draft.cleaningLocations || []).map(l => (l.name || '').trim()));
+  const available = presets.filter(p => !used.has(p.name));
+  panel.innerHTML = available.map(p => `
+    <button class="add-menu-item" onclick="App.addLocationPreset('${escapeHtml(p.name)}',${p.times});App.closeMenus()">
+      <span class="mi-label">${escapeHtml(p.name)}</span><span class="mi-hint">${p.times}×/שבוע</span>
+    </button>
+  `).join('') + `
+    <button class="add-menu-item custom" onclick="App.addLocation();App.closeMenus()">
+      <span class="mi-label">מיקום מותאם אישית</span><span class="mi-hint">כתוב שם ובחר פעמים</span>
+    </button>
+  `;
+}
+
 function renderElevatorMenu() {
   const panel = $('#elevator-menu-panel');
   if (!panel) return;
   const companies = (State.tariffs?.elevators || []).map(e => e.company);
-  panel.innerHTML = companies.map(c => `
-    <button class="add-menu-item" onclick="App.addElevatorCompany('${escapeHtml(c)}')">
-      <span class="mi-label">${escapeHtml(c)}</span><span class="mi-hint">מעלית רגילה · 1 יח'</span>
+  const typeRows = (label, type, hint) => companies.map(c => `
+    <button class="add-menu-item" onclick="App.addElevatorCompanyType('${escapeHtml(c)}','${type}');App.closeMenus()">
+      <span class="mi-label">${escapeHtml(c)}</span><span class="mi-hint">${label} · ${hint}</span>
     </button>
-  `).join('') + `
-    <button class="add-menu-item custom" onclick="App.addElevatorCompany('')">
-      <span class="mi-label">חברה אחרת</span><span class="mi-hint">הגדר בעצמך</span>
+  `).join('');
+  panel.innerHTML = `
+    <div class="add-menu-sub">מעלית רגילה</div>
+    ${typeRows('רגילה', 'regular', 'מחיר בסיס')}
+    <div class="add-menu-sub">מעלית מסחרית</div>
+    ${typeRows('מסחרית', 'commercial', '×1.5 מחיר')}
+    <button class="add-menu-item custom" onclick="App.addElevatorCompanyType('','regular');App.closeMenus()">
+      <span class="mi-label">חברה אחרת</span><span class="mi-hint">מותאם אישית</span>
     </button>
   `;
 }
@@ -2391,7 +2404,7 @@ function renderElevators() {
     const qty = Number(e.quantity) || 1;
     const price = pricePerElevator * typeMult * qty;
     return `
-      <div class="elevator-row">
+      <div class="elevator-row" data-elev-row="${i}">
         <input placeholder="שם המעלית" value="${escapeHtml(e.name || '')}" oninput="App.updateElev(${i},'name',this.value)">
         <select onchange="App.updateElev(${i},'company',this.value)">
           ${tariffs.map(t => `<option value="${escapeHtml(t.company)}" ${e.company === t.company ? 'selected' : ''}>${escapeHtml(t.company)}</option>`).join('')}
@@ -2401,11 +2414,29 @@ function renderElevators() {
           <option value="commercial" ${e.type === 'commercial' ? 'selected' : ''}>מסחרית</option>
         </select>
         <input class="num" type="number" min="1" value="${e.quantity || 1}" placeholder="כמות מעליות" oninput="App.updateElev(${i},'quantity',Number(this.value)||1)">
-        <div class="elevator-price">${fmt(price)}</div>
+        <div class="elevator-price" data-elev-price="${i}">${fmt(price)}</div>
         <button class="del-btn" onclick="App.removeElevator(${i})">×</button>
       </div>
     `;
   }).join('');
+}
+
+function updateElevatorPrice(i) {
+  const cell = document.querySelector(`[data-elev-price="${i}"]`);
+  if (!cell) return;
+  const e = State.draft.elevators[i];
+  if (!e) return;
+  const t = State.tariffs || DEFAULT_TARIFFS;
+  const commercialMult = t.elevatorCommercialMultiplier ?? 1.5;
+  const basePrice = t.elevatorBasePrice ?? 1000;
+  const extraPerFloor = t.elevatorExtraPerFloor ?? 100;
+  const freeFloorsUpTo = t.elevatorFreeFloorsUpTo ?? 8;
+  const floorsCount = Number(State.draft.building?.floors) || 0;
+  const extraFloors = Math.max(0, floorsCount - freeFloorsUpTo);
+  const pricePerElevator = basePrice + extraFloors * extraPerFloor;
+  const typeMult = e.type === 'commercial' ? commercialMult : 1;
+  const qty = Number(e.quantity) || 1;
+  cell.textContent = fmt(pricePerElevator * typeMult * qty);
 }
 
 function renderExtras() {
@@ -3162,25 +3193,35 @@ const App = {
     updateSummary();
     this.closeMenus();
   },
+  addElevatorCompanyType(company, type) {
+    State.draft.elevators.push({ name: '', company, type: type || 'regular', quantity: 1 });
+    renderElevators();
+    updateSummary();
+    this.closeMenus();
+  },
 
   // Admin: locations
   addLocation() {
     State.draft.cleaningLocations.push({ name: '', minutes: 60, timesPerWeek: 1 });
     renderLocations();
+    renderLocationMenu();
     updateSummary();
   },
   addLocationPreset(name, timesPerWeek) {
     State.draft.cleaningLocations.push({ name, minutes: 60, timesPerWeek });
     renderLocations();
+    renderLocationMenu();
     updateSummary();
   },
   updateLoc(i, field, value) {
     State.draft.cleaningLocations[i][field] = value;
+    if (field === 'name') renderLocationMenu();
     updateSummary();
   },
   removeLocation(i) {
     State.draft.cleaningLocations.splice(i, 1);
     renderLocations();
+    renderLocationMenu();
     updateSummary();
   },
 
@@ -3194,7 +3235,8 @@ const App = {
   updateElev(i, field, value) {
     const numFields = ['quantity'];
     State.draft.elevators[i][field] = numFields.includes(field) ? (Number(value) || 0) : value;
-    renderElevators();
+    // Only recalc — don't re-render rows (preserves input focus)
+    updateElevatorPrice(i);
     updateSummary();
   },
   removeElevator(i) {

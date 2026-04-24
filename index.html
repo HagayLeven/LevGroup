@@ -11,7 +11,7 @@
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_rSJo5u2sEMyUSdlihIBZjtLIGFvegbI",
@@ -26,7 +26,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.FB = { db, collection, doc, getDoc, setDoc, updateDoc, getDocs, query, orderBy, serverTimestamp };
+window.FB = { db, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp };
 window.dispatchEvent(new Event('firebase-ready'));
 </script>
 
@@ -1380,6 +1380,35 @@ h3 { font-size: 1.1rem; }
   transition: all 0.15s;
 }
 .archive-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.archive-actions {
+  display: flex;
+  gap: 6px;
+  margin-inline-start: 8px;
+}
+.archive-actions button {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  transition: all 0.15s;
+  color: var(--ink-soft);
+}
+.archive-actions .act-edit:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+.archive-actions .act-delete:hover {
+  background: var(--red-soft);
+  border-color: var(--red);
+  color: var(--red);
+}
 .archive-card .title { font-weight: 600; font-size: 0.98rem; margin-bottom: 2px; }
 .archive-card .meta { font-size: 0.8rem; color: var(--ink-muted); }
 .archive-card .amount {
@@ -2009,9 +2038,9 @@ function renderAdmin() {
         <div class="admin-hero-overlay"></div>
         <div class="admin-hero-inner">
           <div>
-            <div class="admin-hero-badge" style="margin-bottom:12px">הצעה חדשה</div>
-            <div class="admin-hero-title">בואו נבנה הצעה מותאמת</div>
-            <div class="admin-hero-sub">מלאו את פרטי הבניין והשירותים — הסיכום יתעדכן אוטומטית מצד שמאל.</div>
+            <div class="admin-hero-badge" style="margin-bottom:12px">${State.editingId ? 'עריכת הצעה #' + (State.editingQuoteNumber || '') : 'הצעה חדשה'}</div>
+            <div class="admin-hero-title">${State.editingId ? 'עריכת הצעת מחיר קיימת' : 'בואו נבנה הצעה מותאמת'}</div>
+            <div class="admin-hero-sub">${State.editingId ? 'השינויים יעדכנו את ההצעה הקיימת תחת אותו קישור ללקוח.' : 'מלאו את פרטי הבניין והשירותים — הסיכום יתעדכן אוטומטית מצד שמאל.'}</div>
           </div>
           <img src="assets/logo.png" alt="LEV GROUP" class="admin-hero-logo">
         </div>
@@ -2238,7 +2267,7 @@ function renderAdmin() {
       <div class="summary" id="summary"></div>
 
       <div class="btn-row">
-        <button class="btn btn-accent" onclick="App.createQuote()">🔗 יצירת הצעה + קישור ללקוח</button>
+        <button class="btn btn-accent" onclick="App.createQuote()">${State.editingId ? '💾 עדכון הצעה קיימת' : '🔗 יצירת הצעה + קישור ללקוח'}</button>
         <button class="btn btn-primary" onclick="App.previewClient()">👁️ תצוגה מקדימה</button>
         <button class="btn btn-ghost" onclick="App.resetDraft()">🗑️ איפוס</button>
       </div>
@@ -2876,6 +2905,10 @@ async function renderArchive() {
           ${signed ? '✓ נחתם' : '⏳ ממתין'}
         </span>
         <div class="amount">${fmt(perApt)}<small>לדירה</small></div>
+        <div class="archive-actions">
+          <button class="act-edit" title="ערוך" onclick="event.stopPropagation();App.editQuote('${q.id}')">✏️</button>
+          <button class="act-delete" title="מחק" onclick="event.stopPropagation();App.deleteQuote('${q.id}','${escapeHtml(q.client.name || '')}')">🗑️</button>
+        </div>
       `;
       list.appendChild(card);
     });
@@ -3062,6 +3095,57 @@ function renderSettings() {
 // APP API
 // ================================================================
 const App = {
+  // Archive: edit / delete
+  async editQuote(id) {
+    try {
+      await waitForFirebase();
+      const ref = window.FB.doc(window.FB.db, CONFIG.collection, id);
+      const snap = await window.FB.getDoc(ref);
+      if (!snap.exists()) { toast('ההצעה לא נמצאה', 'error'); return; }
+      const q = snap.data();
+      State.editingId = id;
+      State.editingQuoteNumber = q.quoteNumber;
+      State.editingCreatedAt = q.createdAt;
+      State.editingShareId = q.shareId;
+      State.editingSignature = q.signature || null;
+      State.editingSignedAt = q.signedAt || null;
+      State.draft = {
+        client: q.client || { name: '', representative: '', phone: '', email: '' },
+        building: q.building || { address: '', apartments: 0, floors: 0, parkingType: 'לא מקורה' },
+        cleaningLocations: q.cleaningLocations || [],
+        elevators: q.elevators || [],
+        gardeningVisitsPerMonth: q.gardeningVisitsPerMonth || 0,
+        caretakingVisitsPerMonth: q.caretakingVisitsPerMonth || 0,
+        trashRoomVisitsPerMonth: q.trashRoomVisitsPerMonth || 0,
+        electricityMonthly: q.electricityMonthly || 0,
+        insuranceMonthly: q.insuranceMonthly || 0,
+        hasComplexSystems: !!q.hasComplexSystems,
+        customExtras: q.customExtras || [],
+        discount: q.discount || 0,
+        vatPct: q.vatPct ?? 18,
+        servicesText: q.servicesText || defaultServicesText(),
+        benefitsText: q.benefitsText || defaultBenefitsText(),
+        notesText: q.notesText || defaultNotesText()
+      };
+      location.search = '?view=new';
+    } catch (err) {
+      console.error(err);
+      toast('שגיאה בטעינת ההצעה', 'error');
+    }
+  },
+  async deleteQuote(id, name) {
+    if (!confirm(`למחוק את ההצעה של "${name || 'לקוח'}"?\nפעולה זו אינה הפיכה.`)) return;
+    try {
+      await waitForFirebase();
+      await window.FB.deleteDoc(window.FB.doc(window.FB.db, CONFIG.collection, id));
+      toast('ההצעה נמחקה', 'success');
+      renderArchive();
+    } catch (err) {
+      console.error(err);
+      toast('שגיאה במחיקה', 'error');
+    }
+  },
+
   // UI: dropdown menus
   toggleMenu(id) {
     const el = document.getElementById(id);
@@ -3169,19 +3253,21 @@ const App = {
 
     try {
       await waitForFirebase();
-      const id = shortId();
-      const quoteNumber = await getNextQuoteNumber();
+      const isEditing = !!State.editingId;
+      const id = isEditing ? State.editingId : shortId();
+      const quoteNumber = isEditing ? State.editingQuoteNumber : await getNextQuoteNumber();
 
       const payload = {
         ...data,
         calc,
         quoteNumber,
-        shareId: id,
-        tariffsSnapshot: State.tariffs,  // שמירת התעריפים שהיו בזמן יצירה
-        createdAt: window.FB.serverTimestamp(),
-        signature: null,
-        signedAt: null,
-        status: 'pending'
+        shareId: isEditing ? (State.editingShareId || id) : id,
+        tariffsSnapshot: State.tariffs,
+        createdAt: isEditing ? State.editingCreatedAt : window.FB.serverTimestamp(),
+        updatedAt: window.FB.serverTimestamp(),
+        signature: isEditing ? State.editingSignature : null,
+        signedAt: isEditing ? State.editingSignedAt : null,
+        status: isEditing && State.editingSignature ? 'signed' : 'pending'
       };
 
       await window.FB.setDoc(
@@ -3189,14 +3275,23 @@ const App = {
         payload
       );
 
+      // clear edit state
+      State.editingId = null;
+      State.editingQuoteNumber = null;
+      State.editingCreatedAt = null;
+      State.editingShareId = null;
+      State.editingSignature = null;
+      State.editingSignedAt = null;
+
       const url = `${location.origin}${location.pathname}?id=${id}`;
       $('#modal-link').textContent = url;
       State.lastLink = url;
       State.lastQuote = { id, ...payload };
       $('#modal').classList.add('active');
+      if (isEditing) toast('ההצעה עודכנה בהצלחה', 'success');
     } catch (err) {
       console.error(err);
-      toast('שגיאה ביצירת ההצעה - בדוק הגדרות Firebase', 'error');
+      toast('שגיאה בשמירה - בדוק הגדרות Firebase', 'error');
     }
   },
 

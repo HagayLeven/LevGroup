@@ -1765,9 +1765,12 @@ function calcQuote(data, tariffs) {
   const weeklyHours = weeklyMinutes / 60;
   const weeklyBase = weeklyHours * t.cleaning.hourlyRate;
   const monthlyCleaningBase = weeklyBase * t.cleaning.weeksPerMonth;
-  const cleaningAfterExpansion = monthlyCleaningBase * (1 + t.cleaning.expansionPct / 100);
-  const cleaningAfterProfit = cleaningAfterExpansion * (1 + t.cleaning.profitPct / 100);
-  const cleaningTotal = cleaningAfterProfit;
+  // נוסחת Excel: תוספות אדיטיביות (מע"מ + צו הרחבה + רווח) על בסיס הניקיון החודשי.
+  // 1610 × (1 + 0.18 + 0.35 + 0.10) = 2624.30
+  const cleaningVatPct = Number(data.vatPct ?? t.vatPct) || 0;
+  const cleaningUpliftPct = cleaningVatPct + (t.cleaning.expansionPct || 0) + (t.cleaning.profitPct || 0);
+  const cleaningUpliftAmount = monthlyCleaningBase * (cleaningUpliftPct / 100);
+  const cleaningTotal = monthlyCleaningBase + cleaningUpliftAmount;
 
   // 2. מעליות - מחיר בסיס + תוספת לכל קומה מעל freeFloorsUpTo
   const commercialMult = t.elevatorCommercialMultiplier ?? 1.5;
@@ -1825,10 +1828,14 @@ function calcQuote(data, tariffs) {
   const discountAmount = Number(data.discount) || 0;
   const subtotalAfterDiscount = Math.max(0, subtotalBeforeDiscount - discountAmount);
 
-  // מע"מ
+  // מע"מ — מע"מ על הניקיון כבר כלול בתוך cleaningTotal (לפי נוסחת האקסל),
+  // לכן מחשבים מע"מ רק על השורות האחרות כדי לא לחייב פעמיים.
   const vatPct = Number(data.vatPct ?? t.vatPct) || 0;
-  const vatAmount = subtotalAfterDiscount * (vatPct / 100);
-  const totalMonthly = subtotalAfterDiscount + vatAmount;
+  const cleaningEmbeddedVat = monthlyCleaningBase * (cleaningVatPct / 100);
+  const vatableSubtotal = Math.max(0, subtotalAfterDiscount - cleaningEmbeddedVat);
+  const otherVat = (subtotalAfterDiscount - cleaningTotal) * (vatPct / 100);
+  const vatAmount = cleaningEmbeddedVat + otherVat;
+  const totalMonthly = subtotalAfterDiscount + otherVat;
 
   // פר דירה
   const apartments = Number(data.building?.apartments) || 1;
@@ -2054,7 +2061,7 @@ function renderAdmin() {
         <div class="form-grid">
           <div class="form-field">
             <label>שם נציגות הבניין</label>
-            <input id="f-client-name" placeholder="נציגות שדרות X">
+            <input id="f-client-name" placeholder="שם נציגות הבניין">
           </div>
           <div class="form-field">
             <label>איש קשר מוביל</label>
@@ -2178,11 +2185,11 @@ function renderAdmin() {
             <input id="f-insurance" type="number" min="0" placeholder="הזן ידנית">
           </div>
           <div class="form-field" style="justify-content:flex-end;">
-            <div class="checkbox-row" id="complex-systems-row" onclick="App.toggleComplexSystems()">
+            <label class="checkbox-row" id="complex-systems-row" for="f-complex">
               <input type="checkbox" id="f-complex">
-              <label for="f-complex">מערכות מורכבות</label>
+              <span>מערכות מורכבות</span>
               <span class="price">+${fmt(State.tariffs?.complexSystems?.price || 500)}/חודש</span>
-            </div>
+            </label>
           </div>
         </div>
 
@@ -2363,7 +2370,10 @@ function adminInputHandler(e) {
   else if (id === 'f-trashroom') d.trashRoomVisitsPerMonth = Number(t.value) || 0;
   else if (id === 'f-electricity') d.electricityMonthly = Number(t.value) || 0;
   else if (id === 'f-insurance') d.insuranceMonthly = Number(t.value) || 0;
-  else if (id === 'f-complex') d.hasComplexSystems = t.checked;
+  else if (id === 'f-complex') {
+    d.hasComplexSystems = t.checked;
+    $('#complex-systems-row').classList.toggle('checked', t.checked);
+  }
   else if (id === 'f-discount') d.discount = Number(t.value) || 0;
   else if (id === 'f-vat') d.vatPct = Number(t.value) || 0;
   else if (id === 'f-services') d.servicesText = t.value;

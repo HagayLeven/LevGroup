@@ -327,7 +327,7 @@ window.dispatchEvent(new Event('firebase-ready'));
   overflow: hidden;
   margin-bottom: 22px;
   box-shadow: var(--shadow-lg);
-  height: 180px;
+  height: 200px;
   background: var(--navy);
 }
 .admin-hero-bg {
@@ -335,12 +335,20 @@ window.dispatchEvent(new Event('firebase-ready'));
   inset: 0;
   background-image: url('assets/hero-quote.jpg');
   background-size: cover;
-  background-position: center;
+  background-position: center 30%;
+  filter: blur(1px) saturate(1.1);
+  transform: scale(1.05);
 }
 .admin-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, rgba(26,26,26,0.55) 0%, rgba(30,58,95,0.35) 60%, rgba(30,58,95,0.1) 100%);
+  background: linear-gradient(100deg, rgba(10,25,45,0.82) 0%, rgba(30,58,95,0.65) 55%, rgba(30,58,95,0.45) 100%);
+}
+.admin-hero-logo {
+  height: 120px;
+  width: auto;
+  filter: brightness(0) invert(1) drop-shadow(0 4px 24px rgba(0,0,0,0.4));
+  opacity: 0.98;
 }
 .admin-hero-inner {
   position: relative;
@@ -1859,10 +1867,11 @@ function renderAdmin() {
         <div class="admin-hero-overlay"></div>
         <div class="admin-hero-inner">
           <div>
+            <div class="admin-hero-badge" style="margin-bottom:12px">הצעה חדשה</div>
             <div class="admin-hero-title">בואו נבנה הצעה מותאמת</div>
             <div class="admin-hero-sub">מלאו את פרטי הבניין והשירותים — הסיכום יתעדכן אוטומטית מצד שמאל.</div>
           </div>
-          <div class="admin-hero-badge">הצעה חדשה</div>
+          <img src="assets/logo.png" alt="LEV GROUP" class="admin-hero-logo">
         </div>
       </div>
 

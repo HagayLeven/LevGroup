@@ -697,6 +697,73 @@ h3 { font-size: 1.1rem; }
   color: var(--accent-dark);
 }
 
+/* Add-menu dropdown */
+.add-menu { position: relative; margin-top: 12px; }
+.add-menu-trigger {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.add-menu-trigger:hover {
+  background: var(--accent-dark);
+  color: var(--white);
+}
+.add-menu-trigger .chev {
+  font-size: 0.78rem;
+  transition: transform 0.2s;
+}
+.add-menu.open .add-menu-trigger .chev { transform: rotate(180deg); }
+.add-menu-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 20;
+  overflow: hidden;
+}
+.add-menu.open .add-menu-panel { display: block; }
+.add-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line-soft);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--ink);
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: background 0.15s;
+}
+.add-menu-item:last-child { border-bottom: none; }
+.add-menu-item:hover { background: var(--accent-soft); color: var(--accent-dark); }
+.add-menu-item .mi-label { font-weight: 500; }
+.add-menu-item .mi-hint {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+.add-menu-item.custom { background: var(--line-soft); font-style: italic; }
+
 /* Component rows */
 .comp-list { display: flex; flex-direction: column; gap: 10px; }
 .comp-row {
@@ -1975,11 +2042,25 @@ function renderAdmin() {
           <option value="חניון">
           <option value="חצר">
         </datalist>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
-          <button class="add-row-btn" onclick="App.addLocationPreset('לובי קומות',1)">+ לובי קומות (1/שבוע)</button>
-          <button class="add-row-btn" onclick="App.addLocationPreset('חדר מדרגות',1)">+ חדר מדרגות (1/שבוע)</button>
-          <button class="add-row-btn" onclick="App.addLocationPreset('לובי ראשי',5)">+ לובי ראשי (5/שבוע)</button>
-          <button class="add-row-btn" onclick="App.addLocation()">+ מיקום מותאם</button>
+        <div class="add-menu" id="add-location-menu">
+          <button class="add-menu-trigger" onclick="App.toggleMenu('add-location-menu')">
+            <span>➕ הוספת מיקום ניקיון</span>
+            <span class="chev">▼</span>
+          </button>
+          <div class="add-menu-panel">
+            <button class="add-menu-item" onclick="App.addLocationPreset('לובי קומות',1);App.closeMenus()">
+              <span class="mi-label">לובי קומות</span><span class="mi-hint">1×/שבוע</span>
+            </button>
+            <button class="add-menu-item" onclick="App.addLocationPreset('חדר מדרגות',1);App.closeMenus()">
+              <span class="mi-label">חדר מדרגות</span><span class="mi-hint">1×/שבוע</span>
+            </button>
+            <button class="add-menu-item" onclick="App.addLocationPreset('לובי ראשי',5);App.closeMenus()">
+              <span class="mi-label">לובי ראשי</span><span class="mi-hint">5×/שבוע</span>
+            </button>
+            <button class="add-menu-item custom" onclick="App.addLocation();App.closeMenus()">
+              <span class="mi-label">מיקום מותאם אישית</span><span class="mi-hint">הגדר בעצמך</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1990,7 +2071,13 @@ function renderAdmin() {
           <span class="section-subtitle">חברה × מספר תחנות</span>
         </div>
         <div id="elevators-body"></div>
-        <button class="add-row-btn" onclick="App.addElevator()">+ הוסף מעלית</button>
+        <div class="add-menu" id="add-elevator-menu">
+          <button class="add-menu-trigger" onclick="App.toggleMenu('add-elevator-menu')">
+            <span>➕ הוספת מעלית</span>
+            <span class="chev">▼</span>
+          </button>
+          <div class="add-menu-panel" id="elevator-menu-panel"></div>
+        </div>
       </div>
 
       <!-- Extras & Modules -->
@@ -2110,11 +2197,30 @@ function renderAdmin() {
   renderLocations();
   renderElevators();
   renderExtras();
+  renderElevatorMenu();
   updateSummary();
 
   // Bind listeners for live updates
   document.addEventListener('input', adminInputHandler);
   document.addEventListener('change', adminInputHandler);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.add-menu')) App.closeMenus();
+  });
+}
+
+function renderElevatorMenu() {
+  const panel = $('#elevator-menu-panel');
+  if (!panel) return;
+  const companies = (State.tariffs?.elevators || []).map(e => e.company);
+  panel.innerHTML = companies.map(c => `
+    <button class="add-menu-item" onclick="App.addElevatorCompany('${escapeHtml(c)}')">
+      <span class="mi-label">${escapeHtml(c)}</span><span class="mi-hint">מעלית רגילה · 1 יח'</span>
+    </button>
+  `).join('') + `
+    <button class="add-menu-item custom" onclick="App.addElevatorCompany('')">
+      <span class="mi-label">חברה אחרת</span><span class="mi-hint">הגדר בעצמך</span>
+    </button>
+  `;
 }
 
 function syncFormFromDraft() {
@@ -2787,6 +2893,23 @@ function renderSettings() {
 // APP API
 // ================================================================
 const App = {
+  // UI: dropdown menus
+  toggleMenu(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    document.querySelectorAll('.add-menu.open').forEach(m => { if (m !== el) m.classList.remove('open'); });
+    el.classList.toggle('open');
+  },
+  closeMenus() {
+    document.querySelectorAll('.add-menu.open').forEach(m => m.classList.remove('open'));
+  },
+  addElevatorCompany(company) {
+    State.draft.elevators.push({ name: '', company, type: 'regular', quantity: 1 });
+    renderElevators();
+    updateSummary();
+    this.closeMenus();
+  },
+
   // Admin: locations
   addLocation() {
     State.draft.cleaningLocations.push({ name: '', minutes: 60, timesPerWeek: 1 });

@@ -628,6 +628,15 @@ h3 { font-size: 1.1rem; }
 }
 .checkbox-row .price { font-size: 0.85rem; color: var(--ink-muted); font-weight: 400; }
 
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #c0392b;
+}
+.field-error[hidden] { display: none; }
+.input-error { border-color: #c0392b !important; background: #fff5f4; }
+
 /* Locations Table */
 .loc-table {
   width: 100%;
@@ -2060,16 +2069,22 @@ function renderAdmin() {
         </div>
         <div class="form-grid">
           <div class="form-field">
-            <label>שם נציגות הבניין</label>
-            <input id="f-client-name" placeholder="שם נציגות הבניין">
+            <label for="f-client-name">שם נציגות הבניין</label>
+            <input id="f-client-name" placeholder="">
           </div>
           <div class="form-field">
-            <label>איש קשר מוביל</label>
+            <label for="f-client-rep">איש קשר מוביל</label>
             <input id="f-client-rep" placeholder="שם מלא">
           </div>
           <div class="form-field">
-            <label>טלפון</label>
-            <input id="f-client-phone" type="tel" placeholder="050-XXXXXXX">
+            <label for="f-client-phone">טלפון</label>
+            <input id="f-client-phone" type="tel" inputmode="tel" dir="ltr"
+                   placeholder="050-1234567" maxlength="11"
+                   pattern="^0(5[0-9]|[2-489])-?[0-9]{7}$"
+                   aria-describedby="f-client-phone-error">
+            <span id="f-client-phone-error" class="field-error" hidden role="alert">
+              מספר טלפון ישראלי לא תקין. נייד: 05X-XXXXXXX · קווי: 0X-XXXXXXX
+            </span>
           </div>
           <div class="form-field">
             <label>מייל (אופציונלי)</label>
@@ -2351,6 +2366,25 @@ function syncFormFromDraft() {
   $('#f-notes').value = d.notesText || '';
 }
 
+// Israeli phone: mobile 05X-XXXXXXX (10 ספרות) או קווי 0X-XXXXXXX (9 ספרות).
+// נקבל גם מרחב/מקף/סוגריים בקלט; נבדוק לפי ספרות בלבד.
+function isValidIsraeliPhone(raw) {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (!digits) return true; // ריק — לא מציגים שגיאה, תיאכף לפני שמירה
+  if (digits.length === 10 && /^05\d{8}$/.test(digits)) return true;
+  if (digits.length === 9 && /^0[2-489]\d{7}$/.test(digits)) return true;
+  return false;
+}
+function validateIsraeliPhone(input) {
+  const err = document.getElementById(input.id + '-error');
+  const digits = input.value.replace(/\D/g, '');
+  const ok = isValidIsraeliPhone(input.value);
+  input.setAttribute('aria-invalid', ok ? 'false' : 'true');
+  if (err) err.hidden = ok || !digits;
+  input.classList.toggle('input-error', !ok && !!digits);
+  return ok;
+}
+
 function adminInputHandler(e) {
   const t = e.target;
   if (!t.closest('.app') || State.view !== 'admin') return;
@@ -2359,7 +2393,7 @@ function adminInputHandler(e) {
   const id = t.id;
   if (id === 'f-client-name') d.client.name = t.value;
   else if (id === 'f-client-rep') d.client.representative = t.value;
-  else if (id === 'f-client-phone') d.client.phone = t.value;
+  else if (id === 'f-client-phone') { d.client.phone = t.value; validateIsraeliPhone(t); }
   else if (id === 'f-client-email') d.client.email = t.value;
   else if (id === 'f-building-address') d.building.address = t.value;
   else if (id === 'f-apartments') d.building.apartments = Number(t.value) || 0;
@@ -3300,6 +3334,11 @@ const App = {
     if (!data.client.name?.trim()) { toast('חובה להזין שם נציגות הבניין', 'error'); return; }
     if (!data.building.address?.trim()) { toast('חובה להזין כתובת בניין', 'error'); return; }
     if (!data.building.apartments || data.building.apartments < 1) { toast('חובה להזין מספר דירות', 'error'); return; }
+    if (data.client.phone && !isValidIsraeliPhone(data.client.phone)) {
+      toast('מספר טלפון לא תקין — נייד 05X-XXXXXXX או קווי 0X-XXXXXXX', 'error');
+      const el = $('#f-client-phone'); el?.focus(); if (el) validateIsraeliPhone(el);
+      return;
+    }
 
     const calc = calcQuote(data, State.tariffs);
     if (calc.totalMonthly <= 0) { toast('הסכום חייב להיות גדול מ-0', 'error'); return; }

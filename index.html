@@ -2241,8 +2241,9 @@ const App = {
 
   // Admin: elevators
   addElevator() {
-    const firstCompany = State.tariffs?.elevators?.[0]?.company || 'שינדלר';
-    State.draft.elevators.push({ name: '', company: firstCompany, stations: 4 });
+    const firstCompany = State.tariffs?.elevators?.[0]?.company || 'Kone';
+    const defaultStations = Number(State.draft.building?.floors) || 1;
+    State.draft.elevators.push({ name: '', company: firstCompany, stations: defaultStations });
     renderElevators();
     updateSummary();
   },

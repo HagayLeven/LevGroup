@@ -1139,6 +1139,9 @@ const DEFAULT_TARIFFS = {
     { company: 'אחר', pricePerStation: 40 }
   ],
 
+  // מכפיל מעליות מסחריות (1.5 = מסחרית ב-50% יותר מרגילה)
+  elevatorCommercialMultiplier: 1.5,
+
   // גינון - מחיר לפעם
   gardening: {
     pricePerVisit: 400
@@ -1254,9 +1257,12 @@ function calcQuote(data, tariffs) {
   const cleaningTotal = cleaningAfterProfit;
 
   // 2. מעליות
+  const commercialMult = t.elevatorCommercialMultiplier ?? 1.5;
   const elevatorsTotal = (data.elevators || []).reduce((s, e) => {
     const tariff = t.elevators.find(x => x.company === e.company);
-    const price = (tariff?.pricePerStation || 0) * (Number(e.stations) || 0);
+    const typeMult = e.type === 'commercial' ? commercialMult : 1;
+    const qty = Number(e.quantity) || 1;
+    const price = (tariff?.pricePerStation || 0) * (Number(e.stations) || 0) * typeMult * qty;
     e._price = price;
     return s + price;
   }, 0);
@@ -1475,7 +1481,19 @@ function renderAdmin() {
           </thead>
           <tbody id="locations-body"></tbody>
         </table>
-        <button class="add-row-btn" onclick="App.addLocation()">+ הוסף מיקום ניקיון</button>
+        <datalist id="location-suggestions">
+          <option value="לובי קומות">
+          <option value="חדר מדרגות">
+          <option value="לובי ראשי">
+          <option value="חניון">
+          <option value="חצר">
+        </datalist>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          <button class="add-row-btn" onclick="App.addLocationPreset('לובי קומות',1)">+ לובי קומות (1/שבוע)</button>
+          <button class="add-row-btn" onclick="App.addLocationPreset('חדר מדרגות',1)">+ חדר מדרגות (1/שבוע)</button>
+          <button class="add-row-btn" onclick="App.addLocationPreset('לובי ראשי',5)">+ לובי ראשי (5/שבוע)</button>
+          <button class="add-row-btn" onclick="App.addLocation()">+ מיקום מותאם</button>
+        </div>
       </div>
 
       <!-- Elevators -->
@@ -1668,16 +1686,24 @@ function renderElevators() {
     return;
   }
   const tariffs = State.tariffs?.elevators || DEFAULT_TARIFFS.elevators;
+  const commercialMult = State.tariffs?.elevatorCommercialMultiplier ?? 1.5;
   body.innerHTML = State.draft.elevators.map((e, i) => {
     const tariff = tariffs.find(t => t.company === e.company);
-    const price = (tariff?.pricePerStation || 0) * (Number(e.stations) || 0);
+    const typeMult = e.type === 'commercial' ? commercialMult : 1;
+    const qty = Number(e.quantity) || 1;
+    const price = (tariff?.pricePerStation || 0) * (Number(e.stations) || 0) * typeMult * qty;
     return `
       <div class="elevator-row">
         <input placeholder="שם המעלית" value="${escapeHtml(e.name || '')}" oninput="App.updateElev(${i},'name',this.value)">
         <select onchange="App.updateElev(${i},'company',this.value)">
           ${tariffs.map(t => `<option value="${escapeHtml(t.company)}" ${e.company === t.company ? 'selected' : ''}>${escapeHtml(t.company)}</option>`).join('')}
         </select>
+        <select onchange="App.updateElev(${i},'type',this.value)">
+          <option value="regular" ${e.type !== 'commercial' ? 'selected' : ''}>רגילה</option>
+          <option value="commercial" ${e.type === 'commercial' ? 'selected' : ''}>מסחרית</option>
+        </select>
         <input class="num" type="number" min="1" value="${e.stations || 1}" placeholder="תחנות" oninput="App.updateElev(${i},'stations',Number(this.value)||0)">
+        <input class="num" type="number" min="1" value="${e.quantity || 1}" placeholder="כמות מעליות" oninput="App.updateElev(${i},'quantity',Number(this.value)||1)">
         <div class="elevator-price">${fmt(price)}</div>
         <button class="del-btn" onclick="App.removeElevator(${i})">×</button>
       </div>
@@ -2243,12 +2269,13 @@ const App = {
   addElevator() {
     const firstCompany = State.tariffs?.elevators?.[0]?.company || 'Kone';
     const defaultStations = Number(State.draft.building?.floors) || 1;
-    State.draft.elevators.push({ name: '', company: firstCompany, stations: defaultStations });
+    State.draft.elevators.push({ name: '', company: firstCompany, type: 'regular', stations: defaultStations, quantity: 1 });
     renderElevators();
     updateSummary();
   },
   updateElev(i, field, value) {
-    State.draft.elevators[i][field] = (field === 'stations') ? (Number(value) || 0) : value;
+    const numFields = ['stations', 'quantity'];
+    State.draft.elevators[i][field] = numFields.includes(field) ? (Number(value) || 0) : value;
     renderElevators();
     updateSummary();
   },

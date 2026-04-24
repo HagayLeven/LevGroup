@@ -1130,14 +1130,19 @@ const DEFAULT_TARIFFS = {
     baseProfit: 100
   },
 
-  // חברות מעליות (מחיר לתחנה לחודש)
+  // חברות מעליות (רק שמות לבחירה; מחיר מחושב לפי קומות)
   elevators: [
-    { company: 'Kone', pricePerStation: 45 },
-    { company: 'Schindler', pricePerStation: 45 },
-    { company: 'אלקטרה מעליות', pricePerStation: 42 },
-    { company: 'אינטראפ', pricePerStation: 40 },
-    { company: 'אחר', pricePerStation: 40 }
+    { company: 'Kone' },
+    { company: 'Schindler' },
+    { company: 'אלקטרה מעליות' },
+    { company: 'אינטראפ' },
+    { company: 'אחר' }
   ],
+
+  // תמחור מעליות: מחיר בסיס + תוספת לכל קומה מעל "freeFloorsUpTo"
+  elevatorBasePrice: 1000,
+  elevatorExtraPerFloor: 100,
+  elevatorFreeFloorsUpTo: 8,
 
   // מכפיל מעליות מסחריות (1.5 = מסחרית ב-50% יותר מרגילה)
   elevatorCommercialMultiplier: 1.5,
@@ -1256,13 +1261,18 @@ function calcQuote(data, tariffs) {
   const cleaningAfterProfit = cleaningAfterExpansion * (1 + t.cleaning.profitPct / 100);
   const cleaningTotal = cleaningAfterProfit;
 
-  // 2. מעליות
+  // 2. מעליות - מחיר בסיס + תוספת לכל קומה מעל freeFloorsUpTo
   const commercialMult = t.elevatorCommercialMultiplier ?? 1.5;
+  const basePrice = t.elevatorBasePrice ?? 1000;
+  const extraPerFloor = t.elevatorExtraPerFloor ?? 100;
+  const freeFloorsUpTo = t.elevatorFreeFloorsUpTo ?? 8;
+  const floorsCount = Number(data.building?.floors) || 0;
+  const extraFloors = Math.max(0, floorsCount - freeFloorsUpTo);
+  const pricePerElevator = basePrice + extraFloors * extraPerFloor;
   const elevatorsTotal = (data.elevators || []).reduce((s, e) => {
-    const tariff = t.elevators.find(x => x.company === e.company);
     const typeMult = e.type === 'commercial' ? commercialMult : 1;
     const qty = Number(e.quantity) || 1;
-    const price = (tariff?.pricePerStation || 0) * (Number(e.stations) || 0) * typeMult * qty;
+    const price = pricePerElevator * typeMult * qty;
     e._price = price;
     return s + price;
   }, 0);
@@ -1687,11 +1697,16 @@ function renderElevators() {
   }
   const tariffs = State.tariffs?.elevators || DEFAULT_TARIFFS.elevators;
   const commercialMult = State.tariffs?.elevatorCommercialMultiplier ?? 1.5;
+  const basePrice = State.tariffs?.elevatorBasePrice ?? 1000;
+  const extraPerFloor = State.tariffs?.elevatorExtraPerFloor ?? 100;
+  const freeFloorsUpTo = State.tariffs?.elevatorFreeFloorsUpTo ?? 8;
+  const floorsCount = Number(State.draft.building?.floors) || 0;
+  const extraFloors = Math.max(0, floorsCount - freeFloorsUpTo);
+  const pricePerElevator = basePrice + extraFloors * extraPerFloor;
   body.innerHTML = State.draft.elevators.map((e, i) => {
-    const tariff = tariffs.find(t => t.company === e.company);
     const typeMult = e.type === 'commercial' ? commercialMult : 1;
     const qty = Number(e.quantity) || 1;
-    const price = (tariff?.pricePerStation || 0) * (Number(e.stations) || 0) * typeMult * qty;
+    const price = pricePerElevator * typeMult * qty;
     return `
       <div class="elevator-row">
         <input placeholder="שם המעלית" value="${escapeHtml(e.name || '')}" oninput="App.updateElev(${i},'name',this.value)">
@@ -1702,7 +1717,6 @@ function renderElevators() {
           <option value="regular" ${e.type !== 'commercial' ? 'selected' : ''}>רגילה</option>
           <option value="commercial" ${e.type === 'commercial' ? 'selected' : ''}>מסחרית</option>
         </select>
-        <input class="num" type="number" min="1" value="${e.stations || 1}" placeholder="תחנות" oninput="App.updateElev(${i},'stations',Number(this.value)||0)">
         <input class="num" type="number" min="1" value="${e.quantity || 1}" placeholder="כמות מעליות" oninput="App.updateElev(${i},'quantity',Number(this.value)||1)">
         <div class="elevator-price">${fmt(price)}</div>
         <button class="del-btn" onclick="App.removeElevator(${i})">×</button>
@@ -2145,12 +2159,30 @@ function renderSettings() {
         </div>
 
         <div class="settings-group">
-          <h3>🛗 חברות מעליות - מחיר לתחנה / חודש</h3>
+          <h3>🛗 תמחור מעליות</h3>
+          <div class="form-grid three">
+            <div class="form-field">
+              <label>מחיר בסיס למעלית (₪)</label>
+              <input type="number" id="t-elev-base" value="${t.elevatorBasePrice ?? 1000}">
+            </div>
+            <div class="form-field">
+              <label>תוספת לכל קומה נוספת (₪)</label>
+              <input type="number" id="t-elev-extra" value="${t.elevatorExtraPerFloor ?? 100}">
+            </div>
+            <div class="form-field">
+              <label>תוספת מתחילה מעל קומה</label>
+              <input type="number" id="t-elev-freefloors" value="${t.elevatorFreeFloorsUpTo ?? 8}">
+            </div>
+          </div>
+          <div class="form-field" style="margin-top:10px;">
+            <label>מכפיל מעליות מסחריות (×)</label>
+            <input type="number" step="0.1" id="t-elev-commercial" value="${t.elevatorCommercialMultiplier ?? 1.5}">
+          </div>
+          <h4 style="margin-top:16px;font-size:0.9rem;color:var(--ink-muted);">רשימת חברות (לבחירה בלבד)</h4>
           <table class="tariff-table">
             <thead>
               <tr>
                 <th>חברה</th>
-                <th style="width:160px">מחיר לתחנה (₪)</th>
                 <th style="width:60px"></th>
               </tr>
             </thead>
@@ -2158,7 +2190,6 @@ function renderSettings() {
               ${t.elevators.map((e, i) => `
                 <tr>
                   <td><input value="${escapeHtml(e.company)}" data-elev="${i}" data-field="company"></td>
-                  <td><input type="number" value="${e.pricePerStation}" data-elev="${i}" data-field="pricePerStation"></td>
                   <td><button class="del-btn" onclick="App.removeElevTariff(${i})">×</button></td>
                 </tr>
               `).join('')}
@@ -2273,13 +2304,12 @@ const App = {
   // Admin: elevators
   addElevator() {
     const firstCompany = State.tariffs?.elevators?.[0]?.company || 'Kone';
-    const defaultStations = Number(State.draft.building?.floors) || 1;
-    State.draft.elevators.push({ name: '', company: firstCompany, type: 'regular', stations: defaultStations, quantity: 1 });
+    State.draft.elevators.push({ name: '', company: firstCompany, type: 'regular', quantity: 1 });
     renderElevators();
     updateSummary();
   },
   updateElev(i, field, value) {
-    const numFields = ['stations', 'quantity'];
+    const numFields = ['quantity'];
     State.draft.elevators[i][field] = numFields.includes(field) ? (Number(value) || 0) : value;
     renderElevators();
     updateSummary();
@@ -2502,7 +2532,7 @@ const App = {
 
   // Settings - tariffs
   addElevTariff() {
-    State.tariffs.elevators.push({ company: 'חברה חדשה', pricePerStation: 40 });
+    State.tariffs.elevators.push({ company: 'חברה חדשה' });
     renderSettings();
   },
   removeElevTariff(i) {
@@ -2515,6 +2545,10 @@ const App = {
     State.tariffs.cleaning.expansionPct = Number($('#t-cleaning-expansion').value) || 35;
     State.tariffs.cleaning.profitPct = Number($('#t-cleaning-profit').value) || 10;
     State.tariffs.management.baseProfit = Number($('#t-management').value) || 100;
+    State.tariffs.elevatorBasePrice = Number($('#t-elev-base').value) || 1000;
+    State.tariffs.elevatorExtraPerFloor = Number($('#t-elev-extra').value) || 100;
+    State.tariffs.elevatorFreeFloorsUpTo = Number($('#t-elev-freefloors').value) || 8;
+    State.tariffs.elevatorCommercialMultiplier = Number($('#t-elev-commercial').value) || 1.5;
     State.tariffs.gardening.pricePerVisit = Number($('#t-gardening').value) || 400;
     if (!State.tariffs.caretaking) State.tariffs.caretaking = { pricePerVisit: 250 };
     State.tariffs.caretaking.pricePerVisit = Number($('#t-caretaking').value) || 250;

@@ -1,0 +1,28 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment / Secrets
+.env
+.env.local
+firebase-secrets.json
+config.local.js
+
+# Build artifacts
+dist/
+build/
+node_modules/
+*.log
+
+# Backup files
+*.bak
+*.backup
+*~

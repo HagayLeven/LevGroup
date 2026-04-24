@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 · LEV GROUP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #FAF7F2;
+  --ink: #1A1A1A;
+  --ink-muted: #8A8A8A;
+  --accent: #C5A572;
+  --accent-dark: #9B7F4E;
+  --line: #E8E4DC;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Heebo', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+.container {
+  max-width: 520px;
+  text-align: center;
+}
+.brand-mark {
+  width: 68px; height: 68px;
+  background: var(--ink);
+  color: var(--accent);
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Instrument Serif', serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.05em;
+}
+.code {
+  font-family: 'Instrument Serif', serif;
+  font-size: 6rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+h1 {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+p {
+  color: var(--ink-muted);
+  font-size: 1.05rem;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+.btn {
+  padding: 14px 28px;
+  background: var(--ink);
+  color: var(--cream);
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: background 0.15s;
+  display: inline-block;
+}
+.btn:hover { background: var(--accent-dark); color: #fff; }
+.contact {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+.contact strong { color: var(--ink); display: block; margin-bottom: 4px; }
+.contact a { color: var(--accent-dark); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand-mark">L</div>
+  <div class="code">404</div>
+  <h1>הדף לא נמצא</h1>
+  <p>ייתכן שהקישור שגוי, או שההצעה הוסרה.<br>אנא פנה לנותן השירות.</p>
+  <a href="/" class="btn">חזרה לדף הבית</a>
+
+  <div class="contact">
+    <strong>LEV GROUP · קבוצת לב</strong>
+    <a href="tel:052-5339443">052-5339443</a> ·
+    <a href="mailto:levgroup4u@gmail.com">levgroup4u@gmail.com</a>
+  </div>
+</div>
+</body>
+</html>

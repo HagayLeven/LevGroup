@@ -991,6 +991,12 @@ h3 { font-size: 1.1rem; }
   font-weight: 700;
   letter-spacing: -0.05em;
 }
+.doc-logo-img {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
 .doc-logo-text .name {
   font-weight: 700;
   font-size: 1.2rem;
@@ -2627,11 +2633,7 @@ async function renderClient() {
         <div class="doc-band">
           <div class="doc-band-top">
             <div class="doc-logo">
-              <div class="doc-logo-mark">L</div>
-              <div class="doc-logo-text">
-                <div class="name">${CONFIG.business.name}</div>
-                <div class="sub">${CONFIG.business.subtitle}</div>
-              </div>
+              <img src="assets/logo.png" alt="${CONFIG.business.name}" class="doc-logo-img">
             </div>
             <div class="doc-bs">בס"ד</div>
           </div>

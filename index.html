@@ -1083,6 +1083,60 @@ h3 { font-size: 1.1rem; }
 }
 .doc-services strong { color: var(--ink); }
 
+.doc-breakdown {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  background: var(--white);
+}
+.doc-bd-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  padding: 14px 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft);
+}
+.doc-bd-row:last-child { border-bottom: none; }
+.doc-bd-row .bd-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.doc-bd-row .bd-label .bd-name {
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--ink);
+}
+.doc-bd-row .bd-label .bd-desc {
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+.doc-bd-row .bd-price {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-size: 1rem;
+}
+.doc-bd-row.subhead {
+  background: var(--cream);
+  font-family: 'Instrument Serif', serif;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-dark);
+  padding: 8px 18px;
+  font-weight: 600;
+}
+.doc-bd-row.subtotal {
+  background: var(--line-soft);
+  font-weight: 600;
+}
+.doc-bd-row.subtotal .bd-name { font-weight: 700; }
+.doc-bd-row.discount .bd-price { color: var(--red); }
+.doc-bd-row.vat { color: var(--ink-soft); }
+
 .doc-total {
   background: linear-gradient(135deg, var(--ink) 0%, #2a2a2a 100%);
   color: var(--cream);
@@ -2522,6 +2576,121 @@ async function renderClient() {
             <div class="doc-section-title">הטבות</div>
             <div class="doc-services">${escapeHtml(q.benefitsText)}</div>
           ` : ''}
+
+          <div class="doc-section-title">פירוט מלא של הצעת המחיר</div>
+          <div class="doc-breakdown">
+            ${calc.cleaningTotal > 0 ? `
+              <div class="doc-bd-row subhead"><div>🧹 ניקיון</div><div></div></div>
+              ${(q.cleaningLocations || []).filter(l => l.timesPerWeek > 0).map(l => `
+                <div class="doc-bd-row">
+                  <div class="bd-label">
+                    <div class="bd-name">${escapeHtml(l.name || 'מיקום')}</div>
+                    <div class="bd-desc">${l.timesPerWeek}×/שבוע · ${l.minutes || 60} דק' לביקור</div>
+                  </div>
+                  <div class="bd-price">כלול</div>
+                </div>
+              `).join('')}
+              <div class="doc-bd-row subtotal">
+                <div class="bd-label">
+                  <div class="bd-name">סה"כ ניקיון חודשי</div>
+                  <div class="bd-desc">כולל חומרים, הרחבה ורווח תפעולי</div>
+                </div>
+                <div class="bd-price">${fmt(calc.cleaningTotal)} ₪</div>
+              </div>
+            ` : ''}
+
+            ${calc.elevatorsTotal > 0 ? `
+              <div class="doc-bd-row subhead"><div>🛗 מעליות</div><div></div></div>
+              ${(q.elevators || []).map(e => {
+                const typeLabel = e.type === 'commercial' ? 'מסחרית' : 'רגילה';
+                const qty = Number(e.quantity) || 1;
+                return `
+                  <div class="doc-bd-row">
+                    <div class="bd-label">
+                      <div class="bd-name">${escapeHtml(e.company || 'מעלית')}${e.name ? ' · ' + escapeHtml(e.name) : ''}</div>
+                      <div class="bd-desc">${typeLabel} · ${qty} יח'</div>
+                    </div>
+                    <div class="bd-price">${fmt(e._price || 0)} ₪</div>
+                  </div>
+                `;
+              }).join('')}
+              <div class="doc-bd-row subtotal">
+                <div class="bd-label"><div class="bd-name">סה"כ מעליות</div></div>
+                <div class="bd-price">${fmt(calc.elevatorsTotal)} ₪</div>
+              </div>
+            ` : ''}
+
+            ${(calc.gardeningTotal > 0 || calc.caretakingTotal > 0 || calc.trashRoomTotal > 0 || calc.electricityTotal > 0 || calc.insuranceTotal > 0 || calc.complexSystemsTotal > 0) ? `
+              <div class="doc-bd-row subhead"><div>🛠️ שירותים נוספים</div><div></div></div>
+              ${calc.gardeningTotal > 0 ? `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">🌿 גינון</div><div class="bd-desc">${q.gardeningVisitsPerMonth || 0} טיפולים בחודש</div></div>
+                  <div class="bd-price">${fmt(calc.gardeningTotal)} ₪</div>
+                </div>` : ''}
+              ${calc.caretakingTotal > 0 ? `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">🧺 חצרנות</div><div class="bd-desc">${q.caretakingVisitsPerMonth || 0} טיפולים בחודש</div></div>
+                  <div class="bd-price">${fmt(calc.caretakingTotal)} ₪</div>
+                </div>` : ''}
+              ${calc.trashRoomTotal > 0 ? `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">🗑️ ניקיון חדר אשפה</div><div class="bd-desc">${q.trashRoomVisitsPerMonth || 0} פעמים בחודש</div></div>
+                  <div class="bd-price">${fmt(calc.trashRoomTotal)} ₪</div>
+                </div>` : ''}
+              ${calc.electricityTotal > 0 ? `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">⚡ חשמל</div><div class="bd-desc">צריכה חודשית ממוצעת</div></div>
+                  <div class="bd-price">${fmt(calc.electricityTotal)} ₪</div>
+                </div>` : ''}
+              ${calc.insuranceTotal > 0 ? `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">🛡️ ביטוח</div><div class="bd-desc">ביטוח בניין חודשי</div></div>
+                  <div class="bd-price">${fmt(calc.insuranceTotal)} ₪</div>
+                </div>` : ''}
+              ${calc.complexSystemsTotal > 0 ? `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">⚙️ מערכות מורכבות</div><div class="bd-desc">כיבוי אש, מאגרי מים, משאבות</div></div>
+                  <div class="bd-price">${fmt(calc.complexSystemsTotal)} ₪</div>
+                </div>` : ''}
+            ` : ''}
+
+            ${(q.customExtras || []).filter(x => Number(x.amount) > 0).length ? `
+              <div class="doc-bd-row subhead"><div>➕ תוספות מותאמות</div><div></div></div>
+              ${(q.customExtras || []).filter(x => Number(x.amount) > 0).map(x => `
+                <div class="doc-bd-row">
+                  <div class="bd-label"><div class="bd-name">${escapeHtml(x.name || 'תוספת')}</div></div>
+                  <div class="bd-price">${fmt(Number(x.amount) || 0)} ₪</div>
+                </div>
+              `).join('')}
+            ` : ''}
+
+            ${calc.managementProfit > 0 ? `
+              <div class="doc-bd-row subhead"><div>💼 ניהול ורווח תפעולי</div><div></div></div>
+              <div class="doc-bd-row">
+                <div class="bd-label"><div class="bd-name">דמי ניהול ותפעול</div><div class="bd-desc">${calc.apartments} דירות × ${fmt((q.tariffsSnapshot?.management?.baseProfit ?? 100))} ₪</div></div>
+                <div class="bd-price">${fmt(calc.managementProfit)} ₪</div>
+              </div>
+            ` : ''}
+
+            <div class="doc-bd-row subtotal">
+              <div class="bd-label"><div class="bd-name">סה"כ ביניים</div></div>
+              <div class="bd-price">${fmt(calc.subtotalBeforeDiscount ?? (calc.totalMonthly - calc.vatAmount + (Number(q.discount)||0)))} ₪</div>
+            </div>
+            ${Number(q.discount) > 0 ? `
+              <div class="doc-bd-row discount">
+                <div class="bd-label"><div class="bd-name">הנחה</div></div>
+                <div class="bd-price">− ${fmt(Number(q.discount))} ₪</div>
+              </div>
+            ` : ''}
+            <div class="doc-bd-row vat">
+              <div class="bd-label"><div class="bd-name">מע"מ (${q.vatPct ?? 18}%)</div></div>
+              <div class="bd-price">${fmt(calc.vatAmount)} ₪</div>
+            </div>
+            <div class="doc-bd-row subtotal" style="background:var(--ink);color:var(--cream);">
+              <div class="bd-label"><div class="bd-name" style="color:var(--accent);">סה"כ חודשי לתשלום</div><div class="bd-desc" style="color:var(--cream);opacity:0.7;">כולל מע"מ</div></div>
+              <div class="bd-price" style="color:var(--accent);font-size:1.2rem;">${fmt(calc.totalMonthly)} ₪</div>
+            </div>
+          </div>
 
           <div class="doc-section-title">התמורה</div>
           <div class="doc-total">

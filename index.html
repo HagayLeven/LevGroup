@@ -1605,7 +1605,7 @@ function calcQuote(data, tariffs) {
 
   // 1. ניקיון - לפי מיקומים
   const weeklyMinutes = (data.cleaningLocations || []).reduce(
-    (s, l) => s + (Number(l.minutes) || 0) * (Number(l.timesPerWeek) || 0), 0
+    (s, l) => s + ((Number(l.minutes) || 60)) * (Number(l.timesPerWeek) || 0), 0
   );
   const weeklyHours = weeklyMinutes / 60;
   const weeklyBase = weeklyHours * t.cleaning.hourlyRate;
@@ -1935,14 +1935,13 @@ function renderAdmin() {
       <div class="section">
         <div class="section-title">
           <h2><span class="icon">🧹</span>מחשבון ניקיון</h2>
-          <span class="section-subtitle">זמן × פעמים בשבוע</span>
+          <span class="section-subtitle">פעמים בשבוע × תעריף חודשי</span>
         </div>
         <table class="loc-table">
           <thead>
             <tr>
               <th>מיקום</th>
-              <th style="width:85px">דקות</th>
-              <th style="width:100px">פעמים/שבוע</th>
+              <th style="width:120px">פעמים/שבוע</th>
               <th style="width:44px"></th>
             </tr>
           </thead>
@@ -2138,7 +2137,6 @@ function renderLocations() {
   body.innerHTML = State.draft.cleaningLocations.map((l, i) => `
     <tr>
       <td><input value="${escapeHtml(l.name)}" oninput="App.updateLoc(${i},'name',this.value)"></td>
-      <td><input class="num" type="number" min="0" value="${l.minutes}" oninput="App.updateLoc(${i},'minutes',Number(this.value)||0)"></td>
       <td><input class="num" type="number" min="0" value="${l.timesPerWeek}" oninput="App.updateLoc(${i},'timesPerWeek',Number(this.value)||0)"></td>
       <td><button class="del-btn" onclick="App.removeLocation(${i})">×</button></td>
     </tr>
@@ -2739,12 +2737,12 @@ function renderSettings() {
 const App = {
   // Admin: locations
   addLocation() {
-    State.draft.cleaningLocations.push({ name: '', minutes: 0, timesPerWeek: 1 });
+    State.draft.cleaningLocations.push({ name: '', minutes: 60, timesPerWeek: 1 });
     renderLocations();
     updateSummary();
   },
   addLocationPreset(name, timesPerWeek) {
-    State.draft.cleaningLocations.push({ name, minutes: 0, timesPerWeek });
+    State.draft.cleaningLocations.push({ name, minutes: 60, timesPerWeek });
     renderLocations();
     updateSummary();
   },
